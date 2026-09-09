@@ -3,7 +3,7 @@
 
 RootTheme är en snabb, modern och interaktiv **CSS Variable Theme Engine** utvecklad för gränssnittsdesigners och utvecklare. Applikationen erbjuder färdiga färgpaletter, ett dynamiskt mörkt läge, "Ljus Accent"-teknik samt en inbyggd **AI Theme Matching Engine** som hjälper dig att hitta rätt färger baserat på textbeskrivningar.
 
-[Besök hemsidan](https://ditt-meyerfoo20.github.io/RootTheme/)
+[Besök hemsidan](https://meyerfoo20.github.io/RootTheme/)
 
 ---
 
