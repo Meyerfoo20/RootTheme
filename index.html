@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RootTheme</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo">RootTheme <span class="logo-badge">V1.0</span></a>
+      <div class="nav-right">
+        <nav>
+          <ul>
+            <li><a href="#themes">Galleri</a></li>
+            <li><a href="#ai-generator">AI</a></li>
+          </ul>
+        </nav>
+        
+        <div class="mode-switch-wrapper" onclick="toggleGlobalDarkMode()" title="Växla Light / Dark Mode">
+          <svg class="mode-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+
+          <label class="switch" onclick="event.stopPropagation();">
+            <input type="checkbox" id="mode-toggle" onchange="toggleGlobalDarkMode()">
+            <span class="slider"></span>
+          </label>
+
+          <svg class="mode-icon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Designa med precision. <span>Omedelbar Elegans.</span></h1>
+      <p>Tolv skräddarsydda färgpaletter. Växla hela gränssnittet till mörkt läge och aktivera "Ljus Accent" för att transformera mörka accenter till klara, ljusa nyanser.</p>
+    </section>
+
+    <section class="preview-section" id="preview">
+      <div class="preview-card">
+        <div class="preview-header">
+          <div>
+            <h2>Interaktiv Komponentvy</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">Aktivt Tema: <span id="current-theme-name" style="color: var(--accent-main); font-weight: 600;">01. Skogsgrön (Standard)</span></p>
+          </div>
+          <div class="preview-header-actions">
+            <button class="btn-glow-toggle" id="glow-btn" onclick="toggleGlowMode()" title="Gör mörka accentfärger ljusare & starkare i mörkt läge">
+              <svg class="btn-icon" viewBox="0 0 24 24">
+                <path d="M12 3c0 4.97-4.03 9-9 9 4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z"/>
+              </svg>
+              <span id="glow-btn-text">Ljus Accent</span>
+            </button>
+
+            <button class="btn" onclick="copyActiveCSS()">Kopiera CSS Root</button>
+          </div>
+        </div>
+
+        <div class="preview-components">
+          <div class="component-box">
+            <h4>Knappkomponenter</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.5rem;">
+              <button class="btn">Primär Action</button>
+              <button class="btn btn-secondary">Sekundär Action</button>
+            </div>
+          </div>
+
+          <div class="component-box">
+            <h4>Läsbarhet & Typografi</h4>
+            <h3 style="font-size: 1.05rem; font-weight: 600;">System Rubrik</h3>
+            <p style="font-size: 0.85rem; color: var(--text-main); margin-top: 0.3rem;">Optimerad typografi för högsta precision på alla skärmar.</p>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Sekundär dämpad systemtext.</p>
+          </div>
+
+          <div class="component-box">
+            <h4>Accenter & Detaljer</h4>
+            <div style="background-color: var(--bg-card); border: 1px solid var(--border-color); padding: 0.8rem; border-radius: 10px; text-align: center;">
+              <span style="color: var(--accent-main); font-weight: 700; font-size: 0.85rem;">Huvudaccent Element</span>
+              <div style="height: 1px; background: var(--border-color); margin: 0.5rem 0;"></div>
+              <span class="pop-badge">Pop Detail Accent</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-header" id="themes">
+      <h2 id="section-title">Ljusa Teman (12 st)</h2>
+      <div class="line"></div>
+    </div>
+
+    <section class="themes-grid" id="themes-grid"></section>
+
+    <section class="ai-section" id="ai-generator">
+      <div class="ai-card">
+        <div class="ai-card-header">
+          <svg class="ai-badge-icon" viewBox="0 0 24 24">
+            <path d="M12 3c0 4.97-4.03 9-9 9 4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z"></path>
+          </svg>
+          <h2>AI Theme Matching Engine</h2>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Beskriv din känsla (t.ex. <i>"vit och varm hemsida"</i> eller <i>"mörk färgstark sida"</i>).</p>
+        
+        <div class="ai-input-group">
+          <input type="text" id="ai-prompt" class="ai-input" placeholder="Skriv din förfrågan här..." />
+          <button class="btn" style="padding: 0 1.6rem;" onclick="generateAIThemes()">
+            <svg class="svg-btn-icon" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Hitta Teman
+          </button>
+        </div>
+
+        <div class="themes-grid" id="ai-results-grid" style="padding: 0; display: none;"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">CSS Root-variabler kopierade till urklipp!</div>
+
+  <footer>
+    <p>&copy; RootTheme Engine. Alla rättigheter förbehållna.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
