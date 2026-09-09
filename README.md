@@ -1,5 +1,5 @@
 # RootTheme
-Assets/hero.png
+![Hero](Assets/hero.png)
 
 RootTheme är en snabb, modern och interaktiv **CSS Variable Theme Engine** utvecklad för gränssnittsdesigners och utvecklare. Applikationen erbjuder färdiga färgpaletter, ett dynamiskt mörkt läge, "Ljus Accent"-teknik samt en inbyggd **AI Theme Matching Engine** som hjälper dig att hitta rätt färger baserat på textbeskrivningar.
 
@@ -16,7 +16,7 @@ Hemsidan är publicerad via GitHub Pages och kräver ingen installation eller kr
 ---
 
 ## Funktioner
-Assets/teman.png
+![Tema](Assets/teman.png)
 
 - **12 Skräddarsydda Teman:** Innehåller en rad noggrant balanserade färgpaletter (Skogsgrön, Marinblå, Terracotta, Plommon, Smaragd m.fl.).
 - **Dynamiskt Mörkt Läge:** Växla sömlöst hela applikationens gränssnitt och färgset mellan ljusa och mörka teman.
@@ -29,7 +29,7 @@ Assets/teman.png
 ---
 
 ## Hur AI-matchningen fungerar
-Assets/ai.png
+![AI](Assets/ai.png)
 
 AI-motorn analyserar förfrågningar genom nyckelordsmatchning och regelbaserad logik:
 
