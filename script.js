@@ -1,3 +1,4 @@
+const GROQ_API_KEY = "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";
 
     const BASE_LIGHT_BG = {
       '--bg-main': '#f8f6f0',
@@ -23,7 +24,7 @@
       '--btn-text': '#ffffff'
     };
 
-    const baseThemes = [
+    let baseThemes = [
       {
         id: '01-forest-green',
         name: '01. Skogsgrön',
@@ -101,7 +102,7 @@
         name: '10. Grafit & Kol',
         desc: 'Mörk grafitgrå som i glow mode får en ljus silver/isblå brytning.',
         keywords: ['grå', 'grafit', 'mono', 'minimalistisk', 'svart', 'kod', 'stilren', 'neutral', 'vit'],
-        light: { '--bg-footer': '#111315', '--accent-main': '#1f2428', '--accent-hover': '#323a40', '--accent-light': '#e3e7ea', '--accent-pop': '#38bdf8' },
+        light: { '--bg-footer': '#111315', '--accent-main': '-1f2428', '--accent-main': '#1f2428', '--accent-hover': '#323a40', '--accent-light': '#e3e7ea', '--accent-pop': '#38bdf8' },
         darkGlow: { '--bg-footer': '#080a0b', '--accent-main': '#e2e8f0', '--accent-hover': '#f1f5f9', '--accent-light': '#e2e8f025', '--accent-pop': '#38bdf8', '--btn-text': '#0f172a' }
       },
       {
@@ -126,37 +127,60 @@
     let isGlowActive = false;
     let currentTheme = null;
     let allThemesMap = new Map();
+    let lastAIGeneratedThemes = [];
 
     function renderAllThemes() {
       const grid = document.getElementById('themes-grid');
       grid.innerHTML = '';
-      allThemesMap.clear();
-
+      // VIKTIGT: Rensa inte hela allThemesMap här om vi vill bevara de genererade AI-korten som ligger i griden, 
+      // men vi fyller på med bas-teman först:
       baseThemes.forEach(item => {
-        const bgBase = isGlobalDarkMode ? BASE_DARK_BG : BASE_LIGHT_BG;
+        let themeObj;
         
-        let accents = { ...item.light };
-        if (isGlobalDarkMode) {
-          if (isGlowActive) {
-            accents = { ...item.darkGlow };
-          } else {
-            accents['--bg-footer'] = '#050706';
-            accents['--accent-light'] = accents['--accent-main'] + '44';
+        if (item.isCustomAI) {
+          const bgBase = isGlobalDarkMode ? BASE_DARK_BG : BASE_LIGHT_BG;
+          const vars = {
+            ...bgBase,
+            '--bg-footer': isGlobalDarkMode ? '#050706' : item.rawColors.bgFooter,
+            '--accent-main': item.rawColors.accentMain,
+            '--accent-hover': item.rawColors.accentHover,
+            '--accent-light': isGlobalDarkMode ? item.rawColors.accentMain + '33' : item.rawColors.accentLight,
+            '--accent-pop': item.rawColors.accentPop
+          };
+          themeObj = {
+            id: item.id,
+            name: item.name,
+            mode: isGlobalDarkMode ? 'dark' : 'light',
+            desc: item.desc,
+            vars: vars
+          };
+        } else {
+          const bgBase = isGlobalDarkMode ? BASE_DARK_BG : BASE_LIGHT_BG;
+          let accents = { ...item.light };
+          if (isGlobalDarkMode) {
+            if (isGlowActive) {
+              accents = { ...item.darkGlow };
+            } else {
+              accents['--bg-footer'] = '#050706';
+              accents['--accent-light'] = accents['--accent-main'] + '44';
+            }
           }
-        }
 
-        const fullVars = { ...bgBase, ...accents };
-        const themeObj = {
-          id: item.id,
-          name: item.name,
-          mode: isGlobalDarkMode ? (isGlowActive ? 'dark (Glow)' : 'dark') : 'light',
-          desc: item.desc,
-          vars: fullVars
-        };
+          const fullVars = { ...bgBase, ...accents };
+          themeObj = {
+            id: item.id,
+            name: item.name,
+            mode: isGlobalDarkMode ? (isGlowActive ? 'dark (Glow)' : 'dark') : 'light',
+            desc: item.desc,
+            vars: fullVars
+          };
+        }
 
         allThemesMap.set(themeObj.id, themeObj);
         grid.appendChild(createThemeCard(themeObj));
       });
+
+      document.getElementById('section-title').innerText = isGlobalDarkMode ? `Mörka Teman (${baseThemes.length} st)` : `Ljusa Teman (${baseThemes.length} st)`;
 
       if (!currentTheme || !allThemesMap.has(currentTheme.id)) {
         applyTheme(baseThemes[0].id);
@@ -221,9 +245,13 @@
       }
 
       document.getElementById('mode-toggle').checked = isGlobalDarkMode;
-      document.getElementById('section-title').innerText = isGlobalDarkMode ? 'Mörka Teman (12 st)' : 'Ljusa Teman (12 st)';
 
       renderAllThemes();
+      
+      // Uppdatera även de genererade AI-korten i den separata ytan så att de behålls och anpassas till mörkläge
+      if (lastAIGeneratedThemes.length > 0) {
+        renderAIResultsGrid(lastAIGeneratedThemes);
+      }
     }
 
     function toggleGlowMode(forceState = null) {
@@ -256,75 +284,213 @@
       navigator.clipboard.writeText(cssCode).then(() => showToast());
     }
 
-    function showToast() {
+    function showToast(text = "CSS Root-variabler kopierade till urklipp!") {
       const toast = document.getElementById('toast');
+      toast.innerText = text;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2200);
     }
 
-    function generateAIThemes() {
-      const promptRaw = document.getElementById('ai-prompt').value.trim().toLowerCase();
+    function saveAIThemeToGallery(index) {
+      const aiThemeData = lastAIGeneratedThemes[index];
+      if (!aiThemeData) return;
+
+      const newThemeItem = {
+        id: `saved-ai-${Date.now()}-${index}`,
+        name: aiThemeData.name,
+        desc: aiThemeData.desc,
+        isCustomAI: true,
+        rawColors: {
+          bgMain: aiThemeData.bgMain,
+          bgAlt: aiThemeData.bgAlt,
+          bgCard: aiThemeData.bgCard,
+          textMain: aiThemeData.textMain,
+          textMuted: aiThemeData.textMuted,
+          borderColor: aiThemeData.borderColor,
+          bgFooter: aiThemeData.bgFooter,
+          accentMain: aiThemeData.accentMain,
+          accentHover: aiThemeData.accentHover,
+          accentLight: aiThemeData.accentLight,
+          accentPop: aiThemeData.accentPop
+        }
+      };
+
+      baseThemes.push(newThemeItem);
+      renderAllThemes();
+      showToast(`Sparade "${aiThemeData.name}" till galleriet!`);
+    }
+
+    function renderAIResultsGrid(themesArray) {
+      const resultsGrid = document.getElementById('ai-results-grid');
+      resultsGrid.innerHTML = '';
+      resultsGrid.style.display = 'grid';
+
+      themesArray.forEach((item, index) => {
+        const bgMain = isGlobalDarkMode ? '#0a0c0b' : item.bgMain;
+        const bgAlt = isGlobalDarkMode ? '#141816' : item.bgAlt;
+        const bgCard = isGlobalDarkMode ? '#1c221e' : item.bgCard;
+        const textMain = isGlobalDarkMode ? '#f2f5f3' : item.textMain;
+        const textMuted = isGlobalDarkMode ? '#8a968e' : item.textMuted;
+        const borderColor = isGlobalDarkMode ? '#2a332d' : item.borderColor;
+
+        const themeVars = {
+          '--bg-main': bgMain,
+          '--bg-alt': bgAlt,
+          '--bg-card': bgCard,
+          '--bg-glass': bgMain + 'CC',
+          '--text-main': textMain,
+          '--text-muted': textMuted,
+          '--border-color': borderColor,
+          '--shadow-elevated': isGlobalDarkMode ? '0 16px 40px rgba(0, 0, 0, 0.4)' : '0 12px 32px rgba(0, 0, 0, 0.08)',
+          '--btn-text': '#ffffff',
+          '--bg-footer': item.bgFooter,
+          '--accent-main': item.accentMain,
+          '--accent-hover': item.accentHover,
+          '--accent-light': isGlobalDarkMode ? item.accentMain + '33' : item.accentLight,
+          '--accent-pop': item.accentPop
+        };
+
+        const themeObj = {
+          id: `ai-gen-${index}`,
+          name: item.name,
+          mode: isGlobalDarkMode ? 'AI-Genererad (Dark)' : 'AI-Genererad (Light)',
+          desc: item.desc,
+          vars: themeVars
+        };
+
+        // VIKTIGT: Registrera ALLTID i gemensamma mappen så att knappar fungerar oavsett vad användaren klickar på emellan
+        allThemesMap.set(themeObj.id, themeObj);
+
+        const card = document.createElement('div');
+        card.className = 'theme-card';
+        
+        const colors = [bgMain, bgAlt, item.accentMain, item.accentPop];
+        const swatchesHTML = colors.map(c => `<div class="swatch" style="background-color: ${c};" title="${c}"></div>`).join('');
+        const cssCode = `:root {\n${Object.entries(themeVars).map(([k, v]) => `    ${k}: ${v};`).join('\n')}\n}`;
+
+        card.innerHTML = `
+          <div>
+            <h3>${item.name}</h3>
+            <p>${item.desc}</p>
+            <div class="color-swatches">${swatchesHTML}</div>
+          </div>
+          <div>
+            <div class="theme-actions" style="margin-bottom: 0.5rem;">
+              <button class="btn" onclick="applyTheme('${themeObj.id}')">Aktivera</button>
+              <button class="btn btn-secondary" onclick="toggleCode('${themeObj.id}')">Kod</button>
+            </div>
+            <button class="btn btn-secondary" style="width: 100%; font-size: 0.8rem;" onclick="saveAIThemeToGallery(${index})">Spara bland mallar</button>
+            <div class="code-box" id="code-${themeObj.id}">${cssCode}</div>
+          </div>
+        `;
+        resultsGrid.appendChild(card);
+      });
+    }
+
+    // AI-generering via Groq API
+    async function generateAIThemes() {
+      const promptRaw = document.getElementById('ai-prompt').value.trim();
       if (!promptRaw) {
         alert("Vänligen beskriv önskad känsla eller färg först!");
         return;
       }
 
-      const darkWords = ['mörk', 'dark', 'natt', 'black', 'svart', 'kväll', 'dunkel', 'dimmed'];
-      const lightWords = ['vit', 'ljus', 'light', 'dag', 'clear', 'ren'];
+      const resultsGrid = document.getElementById('ai-results-grid');
+      resultsGrid.style.display = 'grid';
+      resultsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 2rem; color: var(--text-muted);">AI analyserar din prompt och skapar 3 nya färgpaletter...</p>';
 
-      const wantsDark = darkWords.some(w => promptRaw.includes(w));
-      const wantsLight = lightWords.some(w => promptRaw.includes(w));
+      const systemPrompt = `Du är en expert på webbdesign och CSS-temakonstruktion. 
+Användaren kommer att skriva en prompt om en känsla, stil eller färg. Analysera den noggrant och skapa EXAKT 3 stycken nya, unika färgpaletter anpassade för en modern webbsida.
+Svara ENDAST med ett giltigt JSON-objekt som följer detta schema:
+{
+  "themes": [
+    {
+      "name": "01. [Kreativt namn]",
+      "desc": "[Kort beskrivning på svenska]",
+      "bgMain": "#HEX",
+      "bgAlt": "#HEX",
+      "bgCard": "#HEX",
+      "textMain": "#HEX",
+      "textMuted": "#HEX",
+      "borderColor": "#HEX",
+      "bgFooter": "#HEX",
+      "accentMain": "#HEX",
+      "accentHover": "#HEX",
+      "accentLight": "#HEX",
+      "accentPop": "#HEX"
+    },
+    {
+      "name": "02. [Kreativt namn]",
+      "desc": "[Kort beskrivning på svenska]",
+      "bgMain": "#HEX",
+      "bgAlt": "#HEX",
+      "bgCard": "#HEX",
+      "textMain": "#HEX",
+      "textMuted": "#HEX",
+      "borderColor": "#HEX",
+      "bgFooter": "#HEX",
+      "accentMain": "#HEX",
+      "accentHover": "#HEX",
+      "accentLight": "#HEX",
+      "accentPop": "#HEX"
+    },
+    {
+      "name": "03. [Kreativt namn]",
+      "desc": "[Kort beskrivning på svenska]",
+      "bgMain": "#HEX",
+      "bgAlt": "#HEX",
+      "bgCard": "#HEX",
+      "textMain": "#HEX",
+      "textMuted": "#HEX",
+      "borderColor": "#HEX",
+      "bgFooter": "#HEX",
+      "accentMain": "#HEX",
+      "accentHover": "#HEX",
+      "accentLight": "#HEX",
+      "accentPop": "#HEX"
+    }
+  ]
+}`;
 
-      if (wantsDark) {
-        toggleGlobalDarkMode(true);
-      } else if (wantsLight) {
-        toggleGlobalDarkMode(false);
-      }
-
-      const glowOnWords = ['färgstark', 'neon', 'lysande', 'glow', 'stark', 'pop', 'intensiv', 'ljus accent', 'klar'];
-      const glowOffWords = ['varm', 'dämpad', 'neutral', 'mjuk', 'sober', 'diskret', 'lugn', 'harmonisk', 'matt'];
-
-      const wantsGlowOn = glowOnWords.some(w => promptRaw.includes(w));
-      const wantsGlowOff = glowOffWords.some(w => promptRaw.includes(w));
-
-      if (wantsGlowOn) {
-        toggleGlowMode(true);
-      } else if (wantsGlowOff) {
-        toggleGlowMode(false);
-      }
-
-      let scoredThemes = baseThemes.map(t => {
-        let score = 0;
-        
-        if (promptRaw.includes(t.name.toLowerCase())) score += 5;
-        if (promptRaw.includes(t.desc.toLowerCase())) score += 3;
-
-        t.keywords.forEach(kw => {
-          if (promptRaw.includes(kw)) score += 4;
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-20b",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: promptRaw + " (Kom ihåg: Skapa EXAKT 3 st unika färgpaletter)" }
+            ],
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+          })
         });
 
-        return { ...t, score };
-      });
-
-      scoredThemes.sort((a, b) => b.score - a.score);
-
-      const top3Matches = scoredThemes.slice(0, 3);
-
-      const resultsGrid = document.getElementById('ai-results-grid');
-      resultsGrid.innerHTML = '';
-      resultsGrid.style.display = 'grid';
-
-      top3Matches.forEach(match => {
-        const themeObj = allThemesMap.get(match.id);
-        if (themeObj) {
-          resultsGrid.appendChild(createThemeCard(themeObj));
+        if (!response.ok) {
+          const errData = await response.text();
+          console.error("Groq API Error Details:", errData);
+          throw new Error("Kunde inte nå Groq API (Felkod: " + response.status + ")");
         }
-      });
 
-      applyTheme(top3Matches[0].id);
+        const data = await response.json();
+        const contentStr = data.choices[0].message.content;
+        const parsedData = JSON.parse(contentStr);
+
+        lastAIGeneratedThemes = parsedData.themes;
+        renderAIResultsGrid(lastAIGeneratedThemes);
+
+        applyTheme('ai-gen-0');
+
+      } catch (error) {
+        console.error("AI-generering misslyckades:", error);
+        resultsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: #f43f5e; padding: 2rem;">Ett fel uppstod vid kontakt med Groq AI. Se konsolen för detaljer.</p>`;
+      }
     }
 
     window.onload = () => {
       renderAllThemes();
     };
-  
